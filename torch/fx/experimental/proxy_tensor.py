@@ -574,6 +574,8 @@ def make_fx(f, decomposition_table=None, tracing_mode="real"):
     if decomposition_table is None:
         decomposition_table = {}
 
+
+
     @functools.wraps(f)
     def wrapped(*args):
         phs = pytree.tree_map(lambda _: fx.PH, args)  # type: ignore[attr-defined]
@@ -588,9 +590,13 @@ def make_fx(f, decomposition_table=None, tracing_mode="real"):
         else:
             raise AssertionError(f"Unexpected tracing type: {tracing_mode}")
 
+        python_dispatch_table = {key: value for key, value in decomposition_table.items() if type(key) is tuple}
         python_dispatcher_mode: Any = nullcontext()
-        if tracing_mode == "symbolic":
+        current_python_dispatch: Any = nullcontext()
+
+        if tracing_mode == "symbolic" or python_dispatch_table:
             python_dispatcher_mode = enable_python_dispatcher()
+            current_python_dispatch = torch._ops.python_dispatch(python_dispatch_table)
 
         proxy_mode = ProxyTorchDispatchMode(fx_tracer)
 
@@ -625,7 +631,7 @@ def make_fx(f, decomposition_table=None, tracing_mode="real"):
 
         # We disable the autocast cache as the autocast cache causes type conversions on parameters to
         # check a cache, which introduces untracked tensors into the graph
-        with decompose(decomposition_table), fake_tensor_mode, python_dispatcher_mode, \
+        with decompose(decomposition_table), fake_tensor_mode, python_dispatcher_mode, current_python_dispatch, \
              sym_mode, proxy_mode, disable_autocast_cache():  # type: ignore[attr-defined]
             t = dispatch_trace(wrap_key(func, args, fx_tracer), tracer=fx_tracer, concrete_args=tuple(phs))
 
