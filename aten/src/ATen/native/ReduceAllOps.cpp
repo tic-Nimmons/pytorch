@@ -3,6 +3,7 @@
 
 #include <ATen/ATen.h>
 #include <ATen/NativeFunctions.h>
+#include <iostream>
 
 namespace at {
 namespace native {
@@ -34,9 +35,25 @@ Tensor max(const Tensor &self) {
 }
 
 Tensor& max_unary_out(const Tensor &self, Tensor& out) {
-  Tensor tmp_output = at::max(self);
-  at::native::resize_output(out, tmp_output.sizes());
-  out.copy_(tmp_output);
+
+  // First check if the devices match (CPU vs GPU)
+  TORCH_CHECK(self.device() == out.device());
+
+  TORCH_CHECK(canCast(
+      typeMetaToScalarType(self.dtype()),
+      typeMetaToScalarType(out.dtype())));
+
+  if (self.numel() == 0) {
+    at::native::resize_output(out, self.sizes());
+    return out;
+  }
+  // TODO convert torch.Size([0]) to torch.Size([])
+  // as the max_all_stub doesn't seem to support it
+  if (out.sizes().size() == 1 && out.sizes()[0] == 0){
+    at::native::resize_output(out, {});
+  }
+
+  max_all_stub(self.device().type(), out, self.contiguous());
   return out;
 }
 
