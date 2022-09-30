@@ -178,8 +178,7 @@ TORCH_LIBRARY(c10d, m) {
       "allreduce_",
       dispatch(c10::DispatchKey::CompositeExplicitAutograd, allreduce_));
   m.def(
-      "allgather_",
-      dispatch(c10::DispatchKey::CompositeExplicitAutograd, allgather_));
+      "allgather_", dispatch(c10::DispatchKey::CompositeExplicitAutograd, allgather_));
   m.def(
       "reduce_scatter_",
       dispatch(c10::DispatchKey::CompositeExplicitAutograd, reduce_scatter_));
