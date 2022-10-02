@@ -22,7 +22,7 @@ struct Conv2DParams final {
   }
 
   bool isDepthwise() const {
-    // Currently, only channel multipler of 1 is supported
+    // Currently, only channel multiplier of 1 is supported
     // i.e. inputFeatureChannels == outputFeatureChannels
     return G > 1 && IC == 1 && OC == G && OC == C;
   }
@@ -32,7 +32,7 @@ struct Conv2DParams final {
   int64_t H; // input height
   int64_t W; // input width
   int64_t OC; // output channels
-  int64_t IC; // input channels
+  uint64_t IC; // input channels
   int64_t KH; // kernel height
   int64_t KW; // kernel width
   int64_t SY; // stride y (height)
